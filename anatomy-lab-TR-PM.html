@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomy Lab Timer · T/R PM</title>
+<style>
+:root{--bg:#17191c;--surface:#22262b;--hover:#2f353c;--field:#111316;--line:#59626c;--edge:#8a94a0;--text:#ffffff;--muted:#cfd6dd;--teal:#5fc9bd;--tealhi:#7ad6cb;--blue:#8dbcec;--amber:#f2b84b;--ink:#101214}
+/* Warm theme: the same roles, in orange and sand on a warm charcoal. */
+body[data-theme=warm]{--bg:#1b1815;--surface:#28231e;--hover:#352e27;--field:#12100e;--line:#6a5f55;--edge:#a09488;--muted:#e2d8cd;--teal:#f59a45;--tealhi:#f8b06a;--blue:#ecd2a6;--amber:#ffd84d}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--text);font-family:Helvetica,Arial,sans-serif;line-height:1.35;font-style:normal}
+.skip{position:absolute;left:-9999px;top:8px;background:var(--amber);color:var(--ink);padding:.6rem 1rem;font-weight:700;z-index:20}
+.skip:focus{left:8px}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+button,.filebtn{font:inherit;font-size:1rem;color:var(--text);background:var(--surface);border:1px solid var(--edge);border-radius:8px;padding:.5rem .9rem;min-height:44px;cursor:pointer}
+button:hover{background:var(--hover)}
+button.primary{background:var(--teal);color:var(--ink);border-color:var(--teal);font-weight:700}
+button.primary:hover{background:var(--tealhi)}
+button.danger{border-color:var(--amber);color:var(--amber)}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{font:inherit;font-size:1rem;color:var(--text);background:var(--field);border:1px solid var(--edge);border-radius:6px;padding:.45rem .6rem}
+input[type=checkbox],input[type=radio]{width:1.25rem;height:1.25rem;accent-color:var(--teal);vertical-align:middle;margin-right:.45rem}
+input[type=date],input[type=time]{color-scheme:dark}
+textarea{width:100%;min-height:9rem}
+.app{min-height:100vh;display:flex;flex-direction:column;gap:1vh;padding:1.2vh 2vw 1.4vh}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.brand{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
+.tools{display:flex;gap:.5rem;flex-wrap:wrap}
+.tools button{font-size:.9rem;padding:.35rem .75rem;color:var(--muted)}
+.phase{text-align:center}
+.phase h1{font-size:clamp(1.5rem,3.4vw,3.8rem);margin:0;letter-spacing:.04em;font-weight:700}
+.range{font-size:clamp(1rem,1.8vw,2rem);color:var(--teal);margin:.2em 0 0}
+.timer{font-size:min(24vh,19vw);font-weight:700;line-height:1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.timer.warn{color:var(--amber)}
+.warnline{min-height:1.5em;text-align:center;color:var(--amber);font-size:clamp(1rem,1.8vw,1.9rem);font-weight:700;margin:0}
+.instr{max-width:1500px;margin:0 auto;font-size:clamp(1rem,1.6vw,1.8rem);text-align:center}
+.instr p{margin:.25em 0}
+.instr .big{font-size:1.2em;font-weight:700}
+.instr .hint{color:var(--muted)}
+.instr ol{text-align:left;columns:2;column-gap:3em;margin:.3em auto;padding-left:1.5em;max-width:60em}
+.instr li{break-inside:avoid;margin:.1em 0}
+.callout{border:2px solid var(--amber);border-radius:10px;padding:.45em .9em;font-weight:700;display:inline-block}
+.stop{border:3px solid var(--amber);border-radius:10px;padding:.6em 1em;text-align:center;font-size:clamp(1rem,1.5vw,1.6rem)}
+.stop h2{margin:0;color:var(--amber);font-size:1.3em;letter-spacing:.04em}
+.stop p{margin:.2em 0}
+.stop ul{list-style:none;margin:.4em 0 0;padding:0;display:flex;gap:.6rem 1.2rem;flex-wrap:wrap;justify-content:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1vw;margin-top:auto}
+@media (max-width:1000px){.instr ol{columns:1}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7em .9em;font-size:clamp(.95rem,1.15vw,1.35rem)}
+.card.move{border:3px solid var(--amber)}
+.card h2{font-size:1.35em;margin:0 0 .25em}
+.card ul{margin:.2em 0;padding-left:1.1em}
+.card li{margin:.25em 0}
+.lbl{color:var(--muted);margin:0;font-size:.9em;text-transform:uppercase;letter-spacing:.08em}
+.loc{font-size:1.6em;font-weight:700;color:var(--teal);margin:.1em 0}
+.loc.model{color:var(--blue)}
+.small{font-size:.9em;color:var(--muted);margin:.3em 0}
+.movetag{display:inline-block;background:var(--amber);color:var(--ink);font-weight:700;font-size:.75em;padding:.1em .5em;border-radius:4px;letter-spacing:.06em;margin-left:.4em;vertical-align:middle}
+.pill{display:inline-block;border:1px solid var(--edge);border-radius:999px;padding:.05em .6em;font-size:.85em;white-space:nowrap;color:var(--muted)}
+.pill.p-prog{border-color:var(--blue);color:var(--blue)}
+.pill.p-ready{border-color:var(--amber);color:var(--amber);font-weight:700}
+.pill.p-ok{border-color:var(--teal);color:var(--teal);font-weight:700}
+.foot{text-align:center;font-size:clamp(1rem,1.6vw,1.8rem);color:var(--muted);border-top:1px solid var(--line);padding-top:.8vh;margin:0}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);background:var(--surface);border-left:1px solid var(--edge);overflow:auto;padding:1rem 1.1rem 2rem;z-index:5}
+.panel h2{margin:0;font-size:1.3rem}
+.panel h3{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin:1.3rem 0 .5rem;border-top:1px solid var(--line);padding-top:1rem}
+.panel select{max-width:100%}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.5rem 0}
+.row input[type=number]{width:6rem}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:.5rem 0;padding:.5rem .8rem}
+fieldset label{display:block;margin:.35rem 0}
+legend{color:var(--muted);padding:0 .4rem}
+.plist{list-style:none;margin:0;padding:0}
+.plist li{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px solid var(--line)}
+.plist button{min-height:36px;padding:.2rem .6rem;font-size:.9rem;white-space:nowrap}
+dialog{background:var(--surface);color:var(--text);border:1px solid var(--edge);border-radius:12px;width:min(1150px,94vw);max-height:90vh;padding:1.2rem 1.4rem;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+dialog h2{margin:0 0 .6rem;font-size:1.5rem}
+dialog h3{margin:1.2rem 0 .4rem;font-size:1.15rem;color:var(--teal)}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}
+th,td{border:1px solid var(--line);padding:.5rem .6rem;text-align:left;vertical-align:top}
+th{color:var(--muted);font-size:.9rem;text-transform:uppercase;letter-spacing:.06em}
+td ul{margin:0;padding-left:1.1em}
+.msg{border:1px solid var(--line);border-radius:8px;padding:.5rem .8rem;margin:.6rem 0}
+.msg.bad{border:2px solid var(--amber)}
+.msg ul{margin:.3rem 0;padding-left:1.2em}
+details{border:1px solid var(--line);border-radius:8px;margin:.5rem 0;padding:.2rem .8rem}
+summary{cursor:pointer;padding:.55rem 0;font-weight:700;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+summary .small{font-weight:400;margin:0}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.3rem .8rem;margin:.5rem 0;border:0;padding:0}
+.checks label{display:block;padding:.2rem 0}
+.teamgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.8rem}
+.tbox{border:1px solid var(--line);border-radius:8px;padding:.6rem .9rem}
+.tbox h3{margin:.1rem 0 .3rem}
+.tbox label{display:block;padding:.25rem 0}
+.mins{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.6rem}
+.mins label{display:block;font-size:.9rem;color:var(--muted)}
+.mins input{width:100%}
+#notice{text-align:center;width:min(1300px,92vw);border:3px solid var(--teal);font-size:clamp(1rem,1.6vw,1.8rem)}
+#notice h2{font-size:clamp(1.8rem,4vw,4.2rem);letter-spacing:.04em}
+#notice .eyebrow{color:var(--teal);letter-spacing:.14em;text-transform:uppercase;margin:0}
+#notice ul{list-style:none;padding:0;margin:.5em 0;display:flex;gap:.5em 1.5em;flex-wrap:wrap;justify-content:center}
+#notice li{border:2px solid var(--amber);border-radius:8px;padding:.2em .7em}
+.toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:var(--field);border:1px solid var(--teal);border-radius:8px;padding:.6rem 1rem;z-index:30;max-width:90vw}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to timer</a>
+<div class="app">
+  <header class="bar">
+    <p class="brand" id="brand">Human Anatomy Lab · T/R PM</p>
+    <nav class="tools" aria-label="Views and display controls">
+      <button id="tBoard" data-act="open" data-d="board">Assignments</button>
+      <button id="tStations" data-act="open" data-d="stations">Stations and structure lists</button>
+      <button id="tCleanup" data-act="open" data-d="cleanup">Cleanup checklists</button>
+      <button id="tSound" data-act="sound">Sound: On</button>
+      <button id="tFull" data-act="full">Full screen</button>
+      <button id="tPanel" data-act="panel" aria-expanded="false" aria-controls="panel">Instructor</button>
+    </nav>
+  </header>
+  <main id="main" tabindex="-1" style="display:flex;flex-direction:column;gap:1vh;flex:1">
+    <div class="phase">
+      <h1 id="title">Anatomy Lab</h1>
+      <p class="range" id="range"></p>
+    </div>
+    <div id="timerWrap">
+      <div class="timer" id="timer" role="timer" aria-label="Time remaining">00:00</div>
+      <p class="warnline" id="warn"></p>
+    </div>
+    <section class="instr" id="instr" aria-label="Instructions for this activity"></section>
+    <section class="stop" id="stop" aria-label="Stations waiting to be checked" hidden></section>
+    <section class="cards" id="cards" aria-label="Team assignments"></section>
+  </main>
+  <p class="foot" id="foot"></p>
+</div>
+
+<aside class="panel" id="panel" aria-labelledby="pTitle" hidden></aside>
+
+<dialog id="board" aria-labelledby="boardH"></dialog>
+<dialog id="stations" aria-labelledby="stationsH"></dialog>
+<dialog id="cleanup" aria-labelledby="cleanupH"></dialog>
+<dialog id="setup" aria-labelledby="setupH"></dialog>
+<dialog id="edit" aria-labelledby="editH"></dialog>
+<dialog id="notice" aria-labelledby="noticeH"></dialog>
+<dialog id="reset" aria-labelledby="resetH" style="width:min(560px,94vw)">
+  <h2 id="resetH">Reset this lab session?</h2>
+  <p>This clears the timer, tagging progress, station approvals, and cleanup progress for the lab that is showing now. Team names, lab dates, and structure lists are kept. It cannot be undone.</p>
+  <p><label><input type="checkbox" id="resetAll">Also rebuild the team assignments from scratch</label></p>
+  <div class="row"><button class="danger" id="resetYes" data-act="resetyes">Yes, reset the session</button><button id="resetNo" data-act="close">Cancel</button></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+const CLASS={key:'TR-PM',label:'T/R PM',col:'trpm'};
+/*LOGIC-START*/
+let TEAMS=[],STATIONS=[];
+const PER_DEFAULT=15,NEED_DEFAULT=10;
+function shuffled(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const x=a[i];a[i]=a[j];a[j]=x;}return a;}
+function opp(t){return t==='cadaver'?'model':t==='model'?'cadaver':t;}
+function typeOfSet(map,t){const ty=new Set(STATIONS.filter(s=>map[s.id]===t).map(s=>s.type));return ty.size===0?'none':ty.size===1?Array.from(ty)[0]:'mixed';}
+function loadsOf(setup,cleanup){return TEAMS.map((_,t)=>STATIONS.filter(s=>setup[s.id]===t).length+STATIONS.filter(s=>cleanup[s.id]===t).length);}
+function counts(){const c=STATIONS.filter(s=>s.type==='cadaver').length;return {c:c,m:STATIONS.length-c,t:TEAMS.length};}
+function split(J,k){const a=[];for(let i=0;i<k;i++)a.push(Math.floor(J/k)+(i<J%k?1:0));return a;}
+/* Finds how many teams should take cadaver setup so the opposite-type rule holds and jobs are as even as possible. */
+function plan(){
+  const n=counts(),J=n.c+n.m;let best=null;
+  for(let k=1;k<n.t;k++){
+    if(k>n.c||n.t-k>n.m)continue;
+    const ideal=split(J,k).concat(split(J,n.t-k)).sort((a,b)=>a-b);
+    const sp=ideal[ideal.length-1]-ideal[0],sq=ideal.reduce((a,b)=>a+b*b,0),key=ideal.join(', ');
+    if(!best||sp<best.spread||(sp===best.spread&&sq<best.sq))best={spread:sp,sq:sq,key:key,ideal:ideal,ks:[k]};
+    else if(key===best.key)best.ks.push(k);
+  }
+  return best;
+}
+function whyNot(){
+  const n=counts();
+  if(n.t<2)return 'there are fewer than two teams';
+  if(n.c===0)return 'this lab has no cadaver stations';
+  if(n.m===0)return 'this lab has no model stations';
+  return 'there are not enough stations of each type for every team to set up at least one ('+n.t+' teams, '+n.c+' cadaver stations, '+n.m+' model stations)';
+}
+function buildAssignments(shuffle){
+  const sh=a=>shuffle?shuffled(a):a.slice();
+  const order=sh(TEAMS.map((_,i)=>i)),p=plan();
+  const setup={},cleanup={},load={},r1={};
+  order.forEach(t=>load[t]=0);
+  const cad=STATIONS.filter(s=>s.type==='cadaver'),mod=STATIONS.filter(s=>s.type==='model');
+  if(p){
+    const k=shuffle?p.ks[Math.floor(Math.random()*p.ks.length)]:p.ks[p.ks.length-1];
+    const cTeams=order.slice(0,k),mTeams=order.slice(k);
+    sh(cad).forEach((s,i)=>{const t=cTeams[i%cTeams.length];setup[s.id]=t;load[t]++;});
+    sh(mod).forEach((s,i)=>{const t=mTeams[i%mTeams.length];setup[s.id]=t;load[t]++;});
+    const give=(sts,teams)=>sts.forEach(s=>{const best=teams.slice().sort((a,b)=>load[a]-load[b])[0];cleanup[s.id]=best;load[best]++;});
+    give(sh(mod),cTeams);give(sh(cad),mTeams);
+    cTeams.forEach(t=>r1[t]='cadaver');mTeams.forEach(t=>r1[t]='model');
+  }else if(order.length){
+    sh(STATIONS).forEach((s,i)=>{const t=order[i%order.length];setup[s.id]=t;load[t]++;});
+    sh(STATIONS).forEach(s=>{const c=order.filter(t=>t!==setup[s.id]).sort((a,b)=>load[a]-load[b])[0];if(c!==undefined){cleanup[s.id]=c;load[c]++;}});
+    const only=cad.length?(mod.length?'':'cadaver'):'model';
+    order.forEach(t=>{r1[t]=only||(typeOfSet(setup,t)==='model'?'model':'cadaver');});
+  }
+  return {setup:setup,cleanup:cleanup,r1:r1};
+}
+function validate(setup,cleanup){
+  const errors=[],p=plan();
+  const ok=v=>Number.isInteger(v)&&v>=0&&v<TEAMS.length;
+  STATIONS.forEach(s=>{
+    if(!ok(setup[s.id]))errors.push(s.name+' has no setup team.');
+    if(!ok(cleanup[s.id]))errors.push(s.name+' has no cleanup team.');
+  });
+  TEAMS.forEach((n,t)=>{
+    const ty=typeOfSet(setup,t);
+    if(ty==='none')errors.push(n+' has no setup responsibility.');
+    if(p&&ty==='mixed')errors.push(n+' sets up both cadaver and model stations, so the opposite-type cleanup rule cannot be applied to that team.');
+  });
+  STATIONS.forEach(s=>{
+    const c=cleanup[s.id];if(!ok(c))return;
+    if(c===setup[s.id]){errors.push(TEAMS[c]+' is assigned to clean up '+s.name+', the station it set up.');return;}
+    if(p&&typeOfSet(setup,c)===s.type)errors.push(TEAMS[c]+' set up '+s.type+' stations, so it cannot clean up '+s.name+' (a '+s.type+' station).');
+  });
+  const l=loadsOf(setup,cleanup);
+  return {errors:errors,loads:l,spread:l.length?Math.max.apply(null,l)-Math.min.apply(null,l):0,plan:p,
+    note:p?'':'The opposite-type cleanup rule cannot be used for this lab because '+whyNot()+'. Instead, no team cleans up a station it set up.'};
+}
+function parseCSV(text){
+  const rows=[];let row=[],cur='',q=false;text=String(text).replace(/^﻿/,'');
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+    else if(ch==='"')q=true;
+    else if(ch===','){row.push(cur);cur='';}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur='';rows.push(row);row=[];}
+    else cur+=ch;
+  }
+  row.push(cur);rows.push(row);
+  return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+function isoDate(y,mo,d){if(mo<1||mo>12||d<1||d>31)return '';return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function parseDate(s){
+  s=String(s||'').trim();let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return isoDate(+m[1],+m[2],+m[3]);
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/)))return isoDate(m[3].length===2?2000+(+m[3]):+m[3],+m[1],+m[2]);
+  return '';
+}
+function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'lab';}
+function importLabs(text,col){
+  const rows=parseCSV(text),out={labs:[],warnings:[],errors:[]};
+  if(rows.length<2){out.errors.push('The file has no data rows.');return out;}
+  const H=rows[0].map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,''));
+  const iL=H.indexOf('lab'),iT=H.indexOf('type'),iS=H.indexOf('station'),iX=H.indexOf('structure');
+  let iD=H.indexOf(col+'date');if(iD<0)iD=H.indexOf(col);if(iD<0)iD=H.indexOf('date');
+  [['Lab',iL],['Type',iT],['Station',iS],['Structure',iX]].forEach(p=>{if(p[1]<0)out.errors.push('The file is missing a column named '+p[0]+'.');});
+  if(out.errors.length)return out;
+  const byId={};
+  rows.slice(1).forEach((r,n)=>{
+    const g=i=>(i>=0&&r[i]!==undefined?r[i]:'').trim();
+    const ln=g(iL),tn=g(iT).toLowerCase(),sn=g(iS),xn=g(iX),dn=g(iD);
+    if(!ln||!sn){out.warnings.push('Row '+(n+2)+' was skipped because it has no lab name or no station name.');return;}
+    let lab=byId[slug(ln)];
+    if(!lab){lab=byId[slug(ln)]={id:slug(ln),name:ln,date:'',stations:[]};out.labs.push(lab);}
+    if(dn){const d=parseDate(dn);if(!d)out.warnings.push('Row '+(n+2)+': the date "'+dn+'" could not be read. Use a format like 11/9/2026.');else if(!lab.date)lab.date=d;}
+    let st=lab.stations.find(s=>s.name.toLowerCase()===sn.toLowerCase());
+    if(!st){
+      const ty=tn[0]==='c'?'cadaver':tn[0]==='m'?'model':'';
+      if(!ty){out.warnings.push('Row '+(n+2)+' was skipped because the Type for '+sn+' must be Cadaver or Model.');return;}
+      st={id:'s'+(lab.stations.length+1),name:sn,type:ty,list:[],over:0};lab.stations.push(st);
+    }
+    if(xn){if(st.list.length<PER_DEFAULT)st.list.push(xn);else st.over++;}
+  });
+  out.labs.forEach(l=>l.stations.forEach(s=>{
+    if(s.over)out.warnings.push(l.name+', '+s.name+': '+(PER_DEFAULT+s.over)+' structures were listed. The first '+PER_DEFAULT+' were kept.');
+    delete s.over;
+  }));
+  if(!out.labs.length)out.errors.push('No labs were found in the file.');
+  return out;
+}
+function csvCell(v){v=String(v==null?'':v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+/*LOGIC-END*/
+
+const KEY='anatomyLab.v2.'+CLASS.key;
+const PHASES=[
+  {key:'tag',short:'Tagging assigned structures'},
+  {key:'r1',short:'Practice Recall Round 1'},
+  {key:'break',short:'Break'},
+  {key:'r2',short:'Practice Recall Round 2'},
+  {key:'clean',short:'Cleanup and Station Reset'}
+];
+const DEFAULT_TASKS=[
+  'Remove every tag and pin from your assigned stations',
+  'Return models and loose parts to their labeled places',
+  'Wipe down tables and tools the way your instructor showed you',
+  'Put gloves and waste in the correct containers',
+  'Return structure lists and supplies',
+  'Ask your instructor to look over your stations'
+];
+function defaultLab(){
+  const mk=(id,name,type)=>({id:id,name:name,type:type,list:[]});
+  return {id:'thorax-leg-and-gi',name:'Thorax, Leg, and GI',date:'',stations:[
+    mk('s1','Thorax','cadaver'),mk('s2','Anterior Leg','cadaver'),mk('s3','Posterior Leg','cadaver'),
+    mk('s4','Thorax & GI Organs and Blood Vessels','cadaver'),mk('s5','Respiratory Pluck','cadaver'),
+    mk('s6','Blood Vessels & Nerves','model'),mk('s7','Liver Plaque & Model','model'),mk('s8','Pancreas Model','model'),mk('s9','GI Model','model')]};
+}
+function freshConfig(){
+  const lab=defaultLab();
+  return {v:2,teams:CLASS.key==='MW'?['Nebula','Orion','Romulan','Quasar-Neptune','Pulsar']:['Team 1','Team 2','Team 3','Team 4','Team 5'],
+    mins:[30,50,10,50,30],start:'14:00',sound:true,theme:'cool',tasks:DEFAULT_TASKS.slice(),labs:[lab],active:lab.id,sessions:{}};
+}
+function goodConfig(r){return r&&Array.isArray(r.teams)&&r.teams.length>=2&&Array.isArray(r.labs)&&r.labs.length>0&&r.labs.every(l=>l&&l.id&&Array.isArray(l.stations));}
+function loadConfig(){
+  try{const r=JSON.parse(localStorage.getItem(KEY));if(goodConfig(r))return Object.assign(freshConfig(),r);}catch(e){}
+  return freshConfig();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(C));}catch(e){}}
+function freshSession(){
+  return Object.assign({timer:{mode:'manual',status:'idle',idx:0,endsAt:0,startedAt:0,remaining:0},locked:false,override:false,tagged:{},flag:{},taskDone:{},cleanupDone:{}},buildAssignments(false));
+}
+function fits(s){
+  const ok=v=>Number.isInteger(v)&&v<TEAMS.length;
+  return !!(s.setup&&s.cleanup&&s.r1)&&STATIONS.every(x=>ok(s.setup[x.id])&&ok(s.cleanup[x.id]))&&TEAMS.every((_,t)=>!!s.r1[t])&&Object.keys(s.r1).length===TEAMS.length;
+}
+let C=loadConfig(),LAB=null,S=null;
+function bind(){
+  TEAMS=C.teams;
+  LAB=C.labs.find(l=>l.id===C.active)||C.labs[0];C.active=LAB.id;STATIONS=LAB.stations;
+  STATIONS.forEach(s=>{if(!Array.isArray(s.list))s.list=[];});
+  S=C.sessions[LAB.id];
+  if(!S||!S.timer)S=C.sessions[LAB.id]=freshSession();
+  else if(!fits(S)){Object.assign(S,buildAssignments(false));S.override=false;S.locked=false;S.taskDone={};S.cleanupDone={};}
+}
+function todayISO(){const d=new Date();return isoDate(d.getFullYear(),d.getMonth()+1,d.getDate());}
+(function(){const m=C.labs.find(l=>l.date&&l.date===todayISO());if(m)C.active=m.id;})();
+bind();
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setText(el,t){if(el.textContent!==t)el.textContent=t;}
+function paint(el,html){
+  const a=document.activeElement,id=(a&&a.id&&el.contains(a))?a.id:null;
+  el.innerHTML=html;
+  if(id){const n=$(id);if(n)n.focus();}
+}
+function per(s){return PER_DEFAULT;}
+function need(s){return Math.min(NEED_DEFAULT,per(s));}
+function stById(id){return STATIONS.find(s=>s.id===id);}
+function hasBoth(){const n=counts();return n.c>0&&n.m>0;}
+
+/* ---------- Timer ---------- */
+const MS=60000;
+function dur(i){return Math.max(1,C.mins[i]||1)*MS;}
+function total(){let t=0;for(let i=0;i<PHASES.length;i++)t+=dur(i);return t;}
+function anchor(now){const p=String(C.start||'14:00').split(':'),d=new Date(now);d.setHours(+p[0]||0,+p[1]||0,0,0);return d.getTime();}
+function view(now){
+  const T=S.timer;
+  if(T.mode==='clock'){
+    const a=anchor(now);let e=now-a;
+    if(e<0)return {key:'pre',rem:-e,end:a};
+    if(e>=total())return {key:'done'};
+    let i=0,st=a;while(e>=dur(i)){e-=dur(i);st+=dur(i);i++;}
+    return {key:i,rem:dur(i)-e,start:st,end:st+dur(i)};
+  }
+  if(T.status==='idle')return {key:'idle',rem:dur(0)};
+  if(T.status==='done')return {key:'done'};
+  if(T.status==='paused')return {key:T.idx,rem:T.remaining,paused:true,start:T.startedAt,end:now+T.remaining};
+  return {key:T.idx,rem:Math.max(0,T.endsAt-now),start:T.startedAt,end:T.endsAt};
+}
+function advance(now){
+  const T=S.timer;if(T.mode!=='manual'||T.status!=='running')return;
+  let ch=false;
+  while(T.status==='running'&&now>=T.endsAt){
+    if(T.idx>=PHASES.length-1){T.status='done';}
+    else{T.idx++;T.startedAt=T.endsAt;T.endsAt+=dur(T.idx);}
+    ch=true;
+  }
+  if(ch)save();
+}
+function toManual(){
+  const T=S.timer;if(T.mode==='manual')return false;
+  const v=view(Date.now());T.mode='manual';
+  if(v.key==='pre'){T.status='idle';T.idx=0;}
+  else if(v.key==='done'){T.status='done';T.idx=PHASES.length-1;}
+  else{T.status='running';T.idx=v.key;T.startedAt=v.start;T.endsAt=v.end;}
+  toast('Switched to Manual Mode. Your place in the schedule was kept.');
+  return true;
+}
+function begin(i,now){const T=S.timer;T.idx=i;T.startedAt=now;T.endsAt=now+dur(i);T.status='running';}
+function startPause(){
+  toManual();const T=S.timer,now=Date.now();
+  if(T.status==='idle')begin(0,now);
+  else if(T.status==='running'){T.remaining=Math.max(0,T.endsAt-now);T.status='paused';}
+  else if(T.status==='paused'){T.endsAt=now+T.remaining;T.status='running';}
+}
+function jump(d){
+  toManual();const T=S.timer,now=Date.now();let i;
+  if(T.status==='done'){if(d>0)return;i=PHASES.length-1;}
+  else if(T.status==='idle'){if(d<0)return;i=1;}
+  else i=T.idx+d;
+  if(i<0)i=0;
+  if(i>=PHASES.length){T.status='done';return;}
+  const wasPaused=T.status==='paused';
+  begin(i,now);
+  if(wasPaused){T.status='paused';T.remaining=dur(i);}
+}
+function setRemaining(fn){
+  toManual();const T=S.timer,now=Date.now();
+  if(T.status==='running'){T.endsAt=now+Math.max(0,fn(T.endsAt-now));}
+  else if(T.status==='paused'){T.remaining=Math.max(0,fn(T.remaining));}
+  else toast('Start the timer first, then adjust the time.');
+}
+function fmtClock(ms){
+  const d=new Date(ms);let h=d.getHours();const m=d.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;
+  return h+':'+String(m).padStart(2,'0')+' '+ap;
+}
+function fmtRem(ms){
+  const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;
+  return (h?h+':'+String(m).padStart(2,'0'):String(m).padStart(2,'0'))+':'+String(x).padStart(2,'0');
+}
+function fmtDate(iso){
+  const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return '';
+  return new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+function phaseKey(v){return typeof v.key==='number'?PHASES[v.key].key:(v.key==='done'?'done':'pre');}
+function titleFor(v){
+  switch(phaseKey(v)){
+    case 'tag':return 'TAGGING · '+C.mins[0]+' MINUTES';
+    case 'r1':return 'PRACTICE RECALL · ROUND 1';
+    case 'break':return 'BREAK · RETURN BY '+fmtClock(v.end);
+    case 'r2':return hasBoth()?'SWITCH STATIONS · PRACTICE RECALL ROUND 2':'PRACTICE RECALL · ROUND 2';
+    case 'clean':return 'CLEANUP AND STATION RESET';
+    case 'done':return 'ANATOMY LAB COMPLETE';
+    default:return v.key==='pre'?'LAB BEGINS AT '+fmtClock(v.end):'READY TO START';
+  }
+}
+
+/* ---------- Assignment helpers ---------- */
+function stationsOf(map,t){return STATIONS.filter(s=>map[s.id]===t);}
+function locName(ty){return ty==='cadaver'?'CADAVER ROOM':ty==='model'?'MODELS':'SEE YOUR INSTRUCTOR';}
+function locType(t,pk){
+  if(pk==='tag'||pk==='pre')return typeOfSet(S.setup,t);
+  if(pk==='r1')return S.r1[t];
+  if(pk==='r2'||pk==='break')return hasBoth()?opp(S.r1[t]):S.r1[t];
+  if(pk==='clean')return typeOfSet(S.cleanup,t);
+  return 'none';
+}
+const PREV={r1:'tag',r2:'r1',clean:'r2'};
+function moves(t,pk){return PREV[pk]?locType(t,PREV[pk])!==locType(t,pk):false;}
+function tagCount(s){const a=S.tagged[s.id]||[];let n=0;for(let i=0;i<per(s);i++)if(a[i])n++;return n;}
+function stInfo(s){
+  const n=tagCount(s),f=S.flag[s.id];
+  if(f==='approved')return {n:n,label:'Approved',cls:'p-ok'};
+  if(f==='ready')return {n:n,label:'Ready for Check',cls:'p-ready'};
+  if(n>0)return {n:n,label:'In Progress',cls:'p-prog'};
+  return {n:n,label:'Not Started',cls:''};
+}
+function pill(s){const i=stInfo(s);return '<span class="pill '+i.cls+'">'+i.n+'/'+per(s)+' · '+i.label+'</span>';}
+function taskCount(t){const d=S.taskDone[t]||[];return C.tasks.filter((_,i)=>d[i]).length;}
+function loadText(r){
+  const n=counts();
+  let s='Jobs per team (setup plus cleanup): '+TEAMS.map((x,t)=>x+' '+r.loads[t]).join(', ')+'. ';
+  s+='The '+STATIONS.length+' stations each need a setup team and a cleanup team, which makes '+(STATIONS.length*2)+' jobs for '+n.t+' teams. ';
+  if(r.plan){
+    s+=r.plan.spread===0?'Under the opposite-type rule, every team can carry the same number of jobs.':'Under the opposite-type rule, the most even split possible is '+r.plan.key+', so some teams carry extra jobs.';
+    if(r.spread>r.plan.spread)s+=' This arrangement is less even than that.';
+  }
+  return s;
+}
+function tagRule(){
+  return STATIONS.every(s=>per(s)===PER_DEFAULT)?'Tag at least '+NEED_DEFAULT+' of the '+PER_DEFAULT+' assigned structures for each topic.':'Tag at least '+NEED_DEFAULT+' of the assigned structures for each topic.';
+}
+
+/* ---------- Main display ---------- */
+function instrHTML(pk){
+  switch(pk){
+    case 'pre':return '<p class="big">Find your team card below.</p><p>When the timer starts, go to the stations your team sets up. '+tagRule()+'</p>';
+    case 'tag':return '<p class="big">'+tagRule()+'</p><p>When your team finishes, stop and have your station checked.</p>';
+    case 'r1':return '<p>Teams practice identifying structures in their assigned area.</p><ol><li>Locate the structure without looking at the answer.</li><li>Name the structure aloud or write it from memory.</li><li>Check your answer.</li><li>Repeat structures you missed.</li><li>Practice accurate anatomical terminology and spelling.</li></ol><p class="hint">Pull each name from memory before you check it. Recalling the name is what makes it stick, more than rereading the label.</p>';
+    case 'break':return '<p class="big">Be at your Round 2 location when the timer reaches zero.</p>';
+    case 'r2':return (hasBoth()?'<p class="big">Teams that began with cadavers move to models. Teams that began with models move to cadavers.</p>':'<p class="big">Move to a station your team did not practice in Round 1.</p>')+'<p>Test yourself before checking the tags. Focus on structures you could not identify during Round 1.</p>';
+    case 'clean':return (plan()?'<p class="callout">CLEAN UP THE OPPOSITE TYPE OF STATION FROM THE ONE YOUR TEAM SET UP.</p><p>If your team set up cadaver stations, you clean up models. If your team set up models, you clean up cadaver stations.</p>':'<p class="callout">CLEAN UP THE STATIONS ON YOUR TEAM CARD. THEY ARE NOT THE ONES YOUR TEAM SET UP.</p>')+'<p class="hint">Do not move or handle cadavers unless your instructor directs you to. Follow instructor directions and all laboratory handling and sanitation protocols.</p>';
+    case 'done':{
+      const st=STATIONS.filter(s=>S.flag[s.id]!=='approved'),tm=TEAMS.filter((_,t)=>!S.cleanupDone[t]);
+      return '<p class="big">Thank you for resetting your stations. Confirm all cleanup tasks are complete before leaving.</p>'+
+        '<p><strong>Stations still awaiting instructor approval:</strong> '+(st.length?st.map(s=>esc(s.name)).join(', '):'None. Every station is approved.')+'</p>'+
+        '<p><strong>Teams still awaiting cleanup confirmation:</strong> '+(tm.length?tm.map(esc).join(', '):'None. Every team is confirmed.')+'</p>';
+    }
+  }
+  return '';
+}
+function cardHTML(t,pk){
+  const mv=moves(t,pk);
+  let h='<article class="card'+(mv?' move':'')+'"><h2>'+esc(TEAMS[t])+(mv?'<span class="movetag">NEW LOCATION</span>':'')+'</h2>';
+  if(pk==='pre'||pk==='tag'){
+    const st=stationsOf(S.setup,t);
+    h+='<p class="lbl">Set up and tag</p>'+(st.length?'<ul>'+st.map(s=>'<li>'+esc(s.name)+'<br>'+pill(s)+'</li>').join('')+'</ul>':'<p>No station assigned</p>');
+  }else if(pk==='r1'||pk==='r2'){
+    const ty=locType(t,pk);
+    h+='<p class="lbl">'+(pk==='r1'?'Round 1 location':'Round 2 location')+'</p><p class="loc '+ty+'">'+locName(ty)+'</p>';
+    if(hasBoth())h+=pk==='r1'?'<p class="small">Round 2: '+locName(opp(ty))+'</p>':'<p class="small">Round 1 was: '+locName(S.r1[t])+'</p>';
+  }else if(pk==='break'){
+    const ty=locType(t,'r2');
+    h+='<p class="lbl">After the break, go to</p><p class="loc '+ty+'">'+locName(ty)+'</p>';
+  }else if(pk==='clean'){
+    const st=stationsOf(S.cleanup,t);
+    h+='<p class="lbl">Clean up</p>'+(st.length?'<ul>'+st.map(s=>'<li>'+esc(s.name)+'</li>').join('')+'</ul>':'<p>No station assigned</p>');
+    h+='<p class="small">Checklist: '+taskCount(t)+' of '+C.tasks.length+' tasks done</p>';
+    h+='<label><input type="checkbox" id="cd'+t+'" data-ch="cdone" data-t="'+t+'"'+(S.cleanupDone[t]?' checked':'')+'>Team cleanup complete</label>';
+  }
+  return h+'</article>';
+}
+function stopHTML(){
+  const w=STATIONS.filter(s=>S.flag[s.id]==='ready');
+  if(!w.length)return '';
+  return '<h2>STOP · HAVE YOUR STATION CHECKED</h2><p>Ask your instructor or Abegail to check your station before moving on.</p><ul>'+
+    w.map(s=>'<li>'+esc(s.name)+' ('+esc(TEAMS[S.setup[s.id]]||'no team')+') <button id="bap_'+s.id+'" data-act="approve" data-s="'+s.id+'">Station approved</button></li>').join('')+'</ul>';
+}
+function renderMain(){
+  const v=view(Date.now()),pk=phaseKey(v);
+  $('timerWrap').hidden=pk==='done';
+  paint($('instr'),instrHTML(pk));
+  const sh=stopHTML();paint($('stop'),sh);$('stop').hidden=!sh;
+  paint($('cards'),pk==='done'?'':TEAMS.map((_,t)=>cardHTML(t,pk)).join(''));
+  $('cards').hidden=pk==='done';
+  setText($('brand'),'Human Anatomy Lab · '+CLASS.label+' · '+LAB.name+(LAB.date?' · '+fmtDate(LAB.date):''));
+}
+
+/* ---------- Instructor panel ---------- */
+let wakeState='checking';
+function panelHTML(){
+  const T=S.timer;
+  return '<div class="phead"><h2 id="pTitle" tabindex="-1">Instructor controls · '+esc(CLASS.label)+'</h2><button id="pClose" data-act="panel">Close</button></div>'+
+  '<section><h3>Today\'s lab</h3><label for="pLab">Lab showing now</label><div class="row"><select id="pLab" data-ch="lab">'+C.labs.map(l=>'<option value="'+esc(l.id)+'"'+(l.id===LAB.id?' selected':'')+'>'+esc(l.name)+(l.date?' ('+esc(fmtDate(l.date))+')':'')+'</option>').join('')+'</select></div>'+
+  '<p class="small">On a lab date, the lab for that date opens on its own.</p>'+
+  '<div class="row"><button id="pSetup" data-act="open" data-d="setup">Class setup: teams, dates, structure lists</button></div></section>'+
+  '<section><h3>Timer</h3><fieldset><legend>Mode</legend>'+
+  '<label><input type="radio" name="mode" id="mManual" value="manual" data-ch="mode"'+(T.mode==='manual'?' checked':'')+'>Manual Mode (starts when you press Start)</label>'+
+  '<label><input type="radio" name="mode" id="mClock" value="clock" data-ch="mode"'+(T.mode==='clock'?' checked':'')+'>Clock Mode (follows the computer clock, starts at '+fmtClock(anchor(Date.now()))+')</label></fieldset>'+
+  '<div class="row"><button class="primary" id="bStart" data-act="startpause">Start</button><button id="bPrev" data-act="jump" data-d="-1">Previous activity</button><button id="bSkip" data-act="jump" data-d="1">Skip to next activity</button></div>'+
+  '<div class="row" role="group" aria-label="Add or subtract time"><button id="bM5" data-act="adj" data-d="-5" aria-label="Subtract 5 minutes">-5 min</button><button id="bM1" data-act="adj" data-d="-1" aria-label="Subtract 1 minute">-1 min</button><button id="bP1" data-act="adj" data-d="1" aria-label="Add 1 minute">+1 min</button><button id="bP5" data-act="adj" data-d="5" aria-label="Add 5 minutes">+5 min</button></div>'+
+  '<div class="row"><label for="setMin">Set minutes remaining</label><input id="setMin" type="number" min="0" max="240" step="1" inputmode="numeric"><button id="bSet" data-act="setrem">Set</button></div>'+
+  '<p class="small">In Clock Mode, using Pause, Skip, Previous, or a time change switches to Manual Mode and keeps your place.</p>'+
+  '<p class="small" id="wakeTxt"></p></section>'+
+  '<section><h3>Sound and display</h3><div class="row"><button id="pSound" data-act="sound">'+(C.sound?'Mute chime':'Unmute chime')+'</button><button id="pChime" data-act="chime">Test chime</button><button id="pFull" data-act="full">Full screen</button></div>'+
+  '<div class="row"><label for="pTheme">Colors</label><select id="pTheme" data-ch="theme"><option value="cool"'+(C.theme!=='warm'?' selected':'')+'>Cool (teal and blue)</option><option value="warm"'+(C.theme==='warm'?' selected':'')+'>Warm (orange)</option></select></div></section>'+
+  '<section><h3>Team assignments</h3><p class="small">Assignments are '+(S.locked?'locked':'unlocked')+'.'+(S.override?' Instructor override is active.':'')+'</p>'+
+  '<div class="row"><button id="pRand" data-act="randomize"'+(S.locked?' disabled':'')+'>Randomize teams</button><button id="pEdit" data-act="edit"'+(S.locked?' disabled':'')+'>Edit station assignments</button><button id="pLock" data-act="lock">'+(S.locked?'Unlock assignments':'Lock assignments')+'</button><button id="pBoard" data-act="open" data-d="board">View assignment board</button></div></section>'+
+  '<section><h3>Station checks</h3><div class="row"><button id="pLists" data-act="open" data-d="stations">Tagging progress and structure lists</button></div><ul class="plist">'+
+  STATIONS.map(s=>'<li><span>'+esc(s.name)+'<br>'+pill(s)+'</span><button id="pap_'+s.id+'" data-act="approve" data-s="'+s.id+'">'+(S.flag[s.id]==='approved'?'Undo approval':'Station approved')+'</button></li>').join('')+'</ul></section>'+
+  '<section><h3>Cleanup</h3><div class="row"><button id="pClean" data-act="open" data-d="cleanup">Open cleanup checklists</button></div>'+
+  TEAMS.map((n,t)=>'<label style="display:block;padding:.25rem 0"><input type="checkbox" id="pcd'+t+'" data-ch="cdone" data-t="'+t+'"'+(S.cleanupDone[t]?' checked':'')+'>'+esc(n)+' cleanup complete</label>').join('')+'</section>'+
+  '<section><h3>Session</h3><div class="row"><button class="danger" id="pReset" data-act="reset">Reset this lab session</button></div></section>';
+}
+function panelOpen(){return !$('panel').hidden;}
+function renderPanel(){if(panelOpen()){paint($('panel'),panelHTML());updateWake();lastStart='';}}
+function updateWake(){
+  const el=$('wakeTxt');if(!el)return;
+  setText(el,wakeState==='on'?'Screen sleep is being prevented while this page is open.':wakeState==='unsupported'?'This browser cannot prevent screen sleep. Turn off display sleep in the computer settings before class.':'Screen sleep prevention is not active yet. Click anywhere on the page to turn it on.');
+}
+
+/* ---------- Dialogs ---------- */
+const openSt=new Set();
+function boardHTML(){
+  const r=validate(S.setup,S.cleanup);
+  const li=a=>a.length?'<ul>'+a.map(s=>'<li>'+esc(s.name)+'</li>').join('')+'</ul>':'None';
+  return '<div class="dhead"><h2 id="boardH">Team assignment board · '+esc(LAB.name)+'</h2><button id="boardX" data-act="close">Close</button></div>'+
+  '<p>'+tagRule()+' Assignments are '+(S.locked?'locked':'unlocked')+'.</p>'+
+  '<table><thead><tr><th scope="col">Team</th><th scope="col">Sets up and tags</th><th scope="col">Recall Round 1</th><th scope="col">Recall Round 2</th><th scope="col">Cleans up</th><th scope="col">Jobs</th></tr></thead><tbody>'+
+  TEAMS.map((n,t)=>'<tr><th scope="row">'+esc(n)+'</th><td>'+li(stationsOf(S.setup,t))+'</td><td>'+locName(locType(t,'r1'))+'</td><td>'+locName(locType(t,'r2'))+'</td><td>'+li(stationsOf(S.cleanup,t))+'</td><td>'+r.loads[t]+'</td></tr>').join('')+'</tbody></table>'+
+  (r.note?'<div class="msg bad"><p>'+esc(r.note)+'</p></div>':'')+
+  (r.errors.length?'<div class="msg bad"><p><strong>'+(S.override?'Instructor override is active. ':'')+'These rules are not met:</strong></p><ul>'+r.errors.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul></div>':
+    (r.note?'':'<div class="msg"><p>All setup and cleanup rules are met. Every team cleans up the opposite type of station from the one it set up.</p></div>'))+
+  '<div class="msg"><p>'+esc(loadText(r))+'</p></div>'+
+  '<h3>Topics for this lab</h3><table><thead><tr><th scope="col">Cadaver stations</th><th scope="col">Model stations</th></tr></thead><tbody><tr><td>'+li(STATIONS.filter(s=>s.type==='cadaver'))+'</td><td>'+li(STATIONS.filter(s=>s.type==='model'))+'</td></tr></tbody></table>';
+}
+function stationsHTML(){
+  return '<div class="dhead"><h2 id="stationsH">Stations and structure lists · '+esc(LAB.name)+'</h2><button id="stationsX" data-act="close">Close</button></div>'+
+  '<p>Open a topic to check off tagged structures, ask for a check, or fix its structure list.</p>'+
+  STATIONS.map(s=>{
+    const tg=S.tagged[s.id]||[],i=stInfo(s),f=S.flag[s.id];
+    let h='<details data-s="'+s.id+'"'+(openSt.has(s.id)?' open':'')+'><summary id="sm_'+s.id+'">'+esc(s.name)+' <span class="small">'+(s.type==='cadaver'?'Cadaver':'Model')+' station · set up by '+esc(TEAMS[S.setup[s.id]]||'no team')+'</span> '+pill(s)+'</summary>';
+    h+='<fieldset class="checks"><legend class="sr">Structures tagged at '+esc(s.name)+'</legend>';
+    for(let k=0;k<per(s);k++)h+='<label><input type="checkbox" id="tg_'+s.id+'_'+k+'" data-ch="tag" data-s="'+s.id+'" data-i="'+k+'"'+(tg[k]?' checked':'')+'>'+esc(s.list[k]||('Structure '+(k+1)))+'</label>';
+    h+='</fieldset><div class="row">';
+    h+='<button id="rd_'+s.id+'" data-act="ready" data-s="'+s.id+'"'+((i.n<need(s)||f)?' disabled':'')+'>Ready for check</button>';
+    h+='<button id="ap_'+s.id+'" data-act="approve" data-s="'+s.id+'">'+(f==='approved'?'Undo approval':'Station approved')+'</button>';
+    if(f==='ready')h+='<button id="ur_'+s.id+'" data-act="unready" data-s="'+s.id+'">Not ready yet</button>';
+    h+='</div>'+(i.n<need(s)&&!f?'<p class="small">Tag at least '+need(s)+' structures to ask for a check.</p>':'');
+    if(f==='ready')h+='<div class="msg bad"><p><strong>STOP · HAVE YOUR STATION CHECKED</strong></p><p>Ask your instructor or Abegail to check your station before moving on.</p></div>';
+    h+='<label for="ls_'+s.id+'">Structure list for '+esc(s.name)+' (one structure per line, up to '+PER_DEFAULT+', '+s.list.length+' entered)</label>';
+    h+='<textarea id="ls_'+s.id+'" data-ch="list" data-s="'+s.id+'" spellcheck="false">'+esc(s.list.join('\n'))+'</textarea></details>';
+    return h;
+  }).join('');
+}
+function cleanupHTML(){
+  return '<div class="dhead"><h2 id="cleanupH">Cleanup checklists</h2><button id="cleanupX" data-act="close">Close</button></div>'+
+  '<div class="msg bad"><p><strong>'+(plan()?'CLEAN UP THE OPPOSITE TYPE OF STATION FROM THE ONE YOUR TEAM SET UP.':'CLEAN UP THE STATIONS LISTED FOR YOUR TEAM.')+'</strong></p><p>Do not move or handle cadavers unless your instructor directs you to. Follow instructor directions and all laboratory handling and sanitation protocols.</p></div>'+
+  '<div class="teamgrid">'+TEAMS.map((n,t)=>{
+    const st=stationsOf(S.cleanup,t),d=S.taskDone[t]||[];
+    return '<div class="tbox"><h3>'+esc(n)+'</h3><p class="small">Cleans up: '+(st.length?st.map(s=>esc(s.name)).join(', '):'no station assigned')+'</p>'+
+      C.tasks.map((task,i)=>'<label><input type="checkbox" id="tk_'+t+'_'+i+'" data-ch="task" data-t="'+t+'" data-i="'+i+'"'+(d[i]?' checked':'')+'>'+esc(task)+'</label>').join('')+
+      '<label style="border-top:1px solid var(--line);margin-top:.4rem;padding-top:.5rem;font-weight:700"><input type="checkbox" id="dcd'+t+'" data-ch="cdone" data-t="'+t+'"'+(S.cleanupDone[t]?' checked':'')+'>Team cleanup complete</label></div>';
+  }).join('')+'</div>'+
+  '<h3>Edit the cleanup tasks (instructor)</h3><label for="tasksTa">One task per line. The same list is used for every team and every lab.</label><textarea id="tasksTa">'+esc(C.tasks.join('\n'))+'</textarea><div class="row"><button id="tasksSave" data-act="tasksave">Save cleanup tasks</button></div>';
+}
+let setupMsg='';
+function setupHTML(){
+  const names=['Tagging','Practice Recall Round 1','Break','Practice Recall Round 2','Cleanup'];
+  return '<div class="dhead"><h2 id="setupH">Class setup · '+esc(CLASS.label)+'</h2><button id="setupX" data-act="close">Close</button></div>'+
+  '<p>Everything here is saved on this computer for the '+esc(CLASS.label)+' class and stays until you change it.</p>'+
+  '<h3>1. Team names</h3><label for="suTeams">One team per line (2 to 8 teams)</label><textarea id="suTeams" style="min-height:10rem" spellcheck="false">'+esc(C.teams.join('\n'))+'</textarea>'+
+  '<h3>2. Schedule</h3><div class="mins">'+names.map((n,i)=>'<div><label for="suM'+i+'">'+n+' (minutes)</label><input type="number" id="suM'+i+'" min="1" max="240" step="1" value="'+C.mins[i]+'"></div>').join('')+
+  '<div><label for="suStart">Clock Mode start time</label><input type="time" id="suStart" value="'+esc(C.start)+'"></div></div>'+
+  '<div class="row"><button class="primary" id="suSave" data-act="susave">Save teams and schedule</button></div>'+
+  '<h3>3. Labs, dates, and structure lists</h3>'+
+  '<p>Upload one CSV file with these columns: <strong>Lab, Type, Station, Structure</strong>. Use one row per structure. Type is Cadaver or Model. For dates, add a column named <strong>'+esc(dateHeader())+'</strong> and put the date on any row of that lab, or set the dates in the table below.</p>'+
+  '<p class="small">Uploading replaces the lab list for this class and clears saved progress from earlier sessions.</p>'+
+  '<div class="row"><label for="suCsv">Upload structure lists (CSV)</label><input type="file" id="suCsv" accept=".csv,text/csv" data-ch="csv"><button id="suCsvDl" data-act="csvdl">Download the current lists as CSV</button></div>'+
+  '<div id="suMsg" role="status">'+setupMsg+'</div>'+
+  '<table><thead><tr><th scope="col">Lab</th><th scope="col">Date for '+esc(CLASS.label)+'</th><th scope="col">Stations</th><th scope="col">Structures entered</th><th scope="col">Showing now</th></tr></thead><tbody>'+
+  C.labs.map((l,i)=>{
+    const c=l.stations.filter(s=>s.type==='cadaver').length,n=l.stations.reduce((a,s)=>a+(s.list?s.list.length:0),0);
+    return '<tr><th scope="row">'+esc(l.name)+'</th><td><input type="date" id="ld_'+i+'" data-ch="labdate" data-i="'+i+'" value="'+esc(l.date||'')+'" aria-label="Date for '+esc(l.name)+'"></td><td>'+c+' cadaver, '+(l.stations.length-c)+' model</td><td>'+n+'</td><td>'+(l.id===LAB.id?'Yes':'<button id="lu_'+i+'" data-act="uselab" data-i="'+i+'">Show this lab</button>')+'</td></tr>';
+  }).join('')+'</tbody></table>'+
+  '<h3>4. Backup</h3><p>Save a backup file after setup. Load it to restore this class on another computer or after the browser data is cleared.</p>'+
+  '<div class="row"><button id="suBk" data-act="backup">Download a backup file</button><label for="suRestore">Load a backup file</label><input type="file" id="suRestore" accept=".json,application/json" data-ch="restore"></div>';
+}
+function dateHeader(){return CLASS.col==='mw'?'MW Date':CLASS.col==='tram'?'TR AM Date':'TR PM Date';}
+let E=null;
+function editHTML(){
+  const opts=sel=>'<option value="-1">Unassigned</option>'+TEAMS.map((n,t)=>'<option value="'+t+'"'+(sel===t?' selected':'')+'>'+esc(n)+'</option>').join('');
+  return '<div class="dhead"><h2 id="editH">Edit station assignments</h2><button id="editX" data-act="close">Cancel</button></div>'+
+  '<table><thead><tr><th scope="col">Station</th><th scope="col">Type</th><th scope="col">Setup team</th><th scope="col">Cleanup team</th></tr></thead><tbody>'+
+  STATIONS.map(s=>'<tr><th scope="row">'+esc(s.name)+'</th><td>'+(s.type==='cadaver'?'Cadaver':'Model')+'</td>'+
+    '<td><select id="es_'+s.id+'" data-ch="edit" data-e="setup" data-k="'+s.id+'" aria-label="Setup team for '+esc(s.name)+'">'+opts(E.setup[s.id])+'</select></td>'+
+    '<td><select id="ec_'+s.id+'" data-ch="edit" data-e="cleanup" data-k="'+s.id+'" aria-label="Cleanup team for '+esc(s.name)+'">'+opts(E.cleanup[s.id])+'</select></td></tr>').join('')+'</tbody></table>'+
+  (hasBoth()?'<h3>Where each team starts Practice Recall Round 1</h3><p class="small">Round 2 is always the other location.</p><div class="row">'+
+  TEAMS.map((n,t)=>'<label for="er_'+t+'">'+esc(n)+'</label><select id="er_'+t+'" data-ch="edit" data-e="r1" data-k="'+t+'"><option value="cadaver"'+(E.r1[t]==='cadaver'?' selected':'')+'>Cadaver room</option><option value="model"'+(E.r1[t]==='model'?' selected':'')+'>Models</option></select>').join('')+'</div>':'')+
+  '<div class="msg" id="eMsg" role="status"></div>'+
+  '<p><label><input type="checkbox" id="eOver" data-ch="eover">Instructor override: save these assignments even though a rule is not met</label></p>'+
+  '<div class="row"><button class="primary" id="eSave" data-act="editsave">Save assignments</button><button id="eCancel" data-act="close">Cancel</button></div>';
+}
+function editCheck(){
+  const r=validate(E.setup,E.cleanup),box=$('eMsg');
+  box.className='msg'+(r.errors.length?' bad':'');
+  box.innerHTML=(r.note?'<p>'+esc(r.note)+'</p>':'')+(r.errors.length?'<p><strong>'+r.errors.length+' rule problem'+(r.errors.length>1?'s':'')+' to fix:</strong></p><ul>'+r.errors.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'<p>All rules are met.</p>')+'<p>'+esc(loadText(r))+'</p>';
+  $('eSave').disabled=r.errors.length>0&&!$('eOver').checked;
+}
+const DLG={board:boardHTML,stations:stationsHTML,cleanup:cleanupHTML,setup:setupHTML};
+function openDlg(name){const d=$(name);d.innerHTML=DLG[name]();if(!d.open)d.showModal();}
+function refresh(){
+  renderMain();renderPanel();
+  Object.keys(DLG).forEach(n=>{const d=$(n);if(d.open)paint(d,DLG[n]());});
+  setText($('tSound'),C.sound?'Sound: On':'Sound: Off');
+  document.body.dataset.theme=C.theme==='warm'?'warm':'cool';
+}
+function download(name,text,type){
+  const a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type:type}));
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function labsCSV(){
+  const rows=[['Lab','Type','Station','Structure',dateHeader()]];
+  C.labs.forEach(l=>l.stations.forEach((s,si)=>{
+    const ty=s.type==='cadaver'?'Cadaver':'Model',list=s.list.length?s.list:[''];
+    list.forEach((x,xi)=>rows.push([l.name,ty,s.name,x,(si===0&&xi===0)?(l.date||''):'']));
+  }));
+  return rows.map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n';
+}
+function switchLab(id){C.active=id;bind();lastKey=null;openSt.clear();}
+
+/* ---------- Alerts ---------- */
+let toastT=null;
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true;},6000);}
+function announce(msg){$('live').textContent='';setTimeout(()=>{$('live').textContent=msg;},50);}
+let ac=null;
+function audio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){}return ac;}
+function chime(force){
+  if(!C.sound&&!force)return;
+  const a=audio();if(!a)return;
+  try{
+    const t=a.currentTime;
+    [[659.25,0],[523.25,0.4]].forEach(p=>{
+      const o=a.createOscillator(),g=a.createGain();
+      o.type='sine';o.frequency.value=p[0];
+      g.gain.setValueAtTime(0.0001,t+p[1]);g.gain.linearRampToValueAtTime(0.16,t+p[1]+0.04);g.gain.exponentialRampToValueAtTime(0.0001,t+p[1]+1.6);
+      o.connect(g);g.connect(a.destination);o.start(t+p[1]);o.stop(t+p[1]+1.7);
+    });
+  }catch(e){}
+}
+let noticeT=null;
+function transition(v){
+  chime(false);
+  const pk=phaseKey(v),d=$('notice');
+  let mv='';
+  if(PREV[pk]){
+    const m=TEAMS.map((n,t)=>moves(t,pk)?'<li>'+esc(n)+': go to '+locName(locType(t,pk))+'</li>':'').join('');
+    mv=m?'<p><strong>Teams changing location</strong></p><ul>'+m+'</ul>':'<p>No team changes rooms for this activity.</p>';
+  }
+  d.innerHTML='<p class="eyebrow">'+(pk==='done'?'Session finished':'Now starting')+'</p><h2 id="noticeH">'+esc(titleFor(v))+'</h2>'+instrHTML(pk)+mv+'<div class="row" style="justify-content:center"><button class="primary" id="noticeX" data-act="close">Dismiss</button></div>';
+  if(!d.open)d.showModal();
+  announce('Activity change. '+titleFor(v));
+  clearTimeout(noticeT);noticeT=setTimeout(()=>{if(d.open)d.close();},15000);
+}
+let wl=null;
+function wake(){
+  if(!('wakeLock' in navigator)){wakeState='unsupported';updateWake();return;}
+  if(wl||document.visibilityState!=='visible')return;
+  navigator.wakeLock.request('screen').then(l=>{wl=l;wakeState='on';updateWake();l.addEventListener('release',()=>{wl=null;wakeState='off';updateWake();});}).catch(()=>{wakeState='off';updateWake();});
+}
+
+/* ---------- Tick ---------- */
+let lastKey=null,lastSec=null,lastStart='';
+function tick(){
+  const now=Date.now();advance(now);
+  const v=view(now),pk=phaseKey(v);
+  if(v.key!==lastKey){
+    const first=lastKey===null;lastKey=v.key;lastSec=null;
+    refresh();
+    if(!first&&(typeof v.key==='number'||v.key==='done'))transition(v);
+  }
+  setText($('title'),titleFor(v));
+  let range='';
+  if(typeof v.key==='number')range=fmtClock(v.start)+' to '+fmtClock(v.end)+' · '+C.mins[v.key]+' minutes'+(v.paused?' · PAUSED':'');
+  else if(v.key==='pre')range='Clock Mode · the schedule starts on its own';
+  else if(v.key==='idle')range='Open Instructor and press Start when you are ready';
+  setText($('range'),range);
+  if(v.key!=='done'){
+    setText($('timer'),fmtRem(v.rem));
+    const sec=Math.ceil(v.rem/1000),ph=typeof v.key==='number';
+    $('timer').classList.toggle('warn',ph&&sec<=300);
+    let w='';
+    if(ph&&sec<=60)w=pk==='break'?'Break is almost over. Please head back to your station now.':'Less than 1 minute remaining';
+    else if(ph&&sec<=300)w='Less than 5 minutes remaining';
+    setText($('warn'),w);
+    if(ph&&lastSec!==null){
+      if(lastSec>300&&sec<=300)announce('5 minutes remaining');
+      if(lastSec>60&&sec<=60)announce(pk==='break'?'Break ends in 1 minute. Please return.':'1 minute remaining');
+    }
+    lastSec=sec;
+  }
+  let foot='';
+  if(typeof v.key==='number'){const nx=PHASES[v.key+1];foot='Next: '+(nx?nx.short:'Lab complete')+' at '+fmtClock(v.end);}
+  else if(v.key==='pre')foot='First: '+PHASES[0].short+' at '+fmtClock(v.end);
+  else if(v.key==='idle')foot='First: '+PHASES[0].short+' ('+C.mins[0]+' minutes)';
+  setText($('foot'),foot);
+  const b=$('bStart');
+  if(b){
+    const T=S.timer;
+    const lbl=T.mode==='clock'?(v.key==='pre'?'Start now':'Pause'):(T.status==='paused'?'Resume':T.status==='running'?'Pause':'Start');
+    const key=lbl+(v.key==='done');
+    if(key!==lastStart){lastStart=key;b.textContent=lbl;b.disabled=v.key==='done';}
+  }
+}
+
+/* ---------- Events ---------- */
+let pointerDown=false;
+document.addEventListener('pointerdown',()=>{pointerDown=true;},true);
+document.addEventListener('pointerup',()=>{pointerDown=false;},true);
+function after(){save();if(lastKey===null){tick();}else{refresh();tick();}}
+document.addEventListener('click',function(ev){
+  audio();wake();
+  const el=ev.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act,s=el.dataset.s;
+  switch(act){
+    case 'panel':{
+      const p=$('panel'),open=p.hidden;p.hidden=!open;$('tPanel').setAttribute('aria-expanded',String(open));
+      if(open){p.innerHTML=panelHTML();updateWake();lastStart='';tick();$('pTitle').focus();}else $('tPanel').focus();
+      return;
+    }
+    case 'open':if(el.dataset.d==='setup')setupMsg='';openDlg(el.dataset.d);return;
+    case 'close':{const d=el.closest('dialog');if(d)d.close();return;}
+    case 'sound':C.sound=!C.sound;if(C.sound)chime(true);break;
+    case 'chime':chime(true);return;
+    case 'full':
+      if(document.fullscreenElement)document.exitFullscreen();
+      else if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>toast('Full screen was blocked. Press F11 instead.'));
+      else toast('Press F11 for full screen.');
+      return;
+    case 'startpause':startPause();break;
+    case 'jump':jump(parseInt(el.dataset.d,10));break;
+    case 'adj':{const d=parseInt(el.dataset.d,10)*MS;setRemaining(r=>r+d);break;}
+    case 'setrem':{const m=parseFloat($('setMin').value);if(isNaN(m)||m<0){toast('Enter the minutes remaining as a number.');return;}setRemaining(()=>m*MS);break;}
+    case 'randomize':{
+      if(S.locked){toast('Assignments are locked. Unlock them first.');return;}
+      const a=buildAssignments(true),r=validate(a.setup,a.cleanup);
+      S.setup=a.setup;S.cleanup=a.cleanup;S.r1=a.r1;S.override=false;
+      toast(r.errors.length?'Randomized, but some rules could not be met. Open the assignment board to see why.':'Team assignments randomized. Lock them when you are happy with them.');break;
+    }
+    case 'lock':S.locked=!S.locked;toast(S.locked?'Assignments locked.':'Assignments unlocked.');break;
+    case 'edit':{
+      if(S.locked){toast('Assignments are locked. Unlock them first.');return;}
+      E={setup:Object.assign({},S.setup),cleanup:Object.assign({},S.cleanup),r1:Object.assign({},S.r1)};
+      const d=$('edit');d.innerHTML=editHTML();d.showModal();editCheck();return;
+    }
+    case 'editsave':{
+      const r=validate(E.setup,E.cleanup);
+      if(r.errors.length&&!$('eOver').checked)return;
+      S.setup=E.setup;S.cleanup=E.cleanup;S.r1=E.r1;S.override=r.errors.length>0;$('edit').close();
+      toast(S.override?'Saved with instructor override. The unmet rules are listed on the assignment board.':'Assignments saved.');break;
+    }
+    case 'tasksave':{const a=$('tasksTa').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!a.length){toast('Enter at least one cleanup task.');return;}C.tasks=a;Object.keys(C.sessions).forEach(k=>{C.sessions[k].taskDone={};});toast('Cleanup tasks saved.');break;}
+    case 'ready':S.flag[s]='ready';break;
+    case 'unready':delete S.flag[s];break;
+    case 'approve':if(S.flag[s]==='approved')delete S.flag[s];else S.flag[s]='approved';break;
+    case 'susave':{
+      const names=$('suTeams').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      if(names.length<2||names.length>8){setupMsg='<div class="msg bad"><p>Enter between 2 and 8 team names, one per line. Nothing was saved.</p></div>';paint($('setup'),setupHTML());return;}
+      const mins=[];for(let i=0;i<PHASES.length;i++){const m=parseInt($('suM'+i).value,10);mins.push(isNaN(m)||m<1?C.mins[i]:Math.min(240,m));}
+      const changed=names.length!==C.teams.length;
+      C.teams=names;C.mins=mins;if(/^\d{2}:\d{2}/.test($('suStart').value))C.start=$('suStart').value.slice(0,5);
+      bind();
+      setupMsg='<div class="msg"><p>Saved.'+(changed?' The number of teams changed, so team assignments were rebuilt.':'')+'</p></div>';
+      break;
+    }
+    case 'uselab':switchLab(C.labs[parseInt(el.dataset.i,10)].id);break;
+    case 'csvdl':download('structure-lists-'+CLASS.key+'.csv',labsCSV(),'text/csv');return;
+    case 'backup':download('anatomy-lab-backup-'+CLASS.key+'.json',JSON.stringify(C,null,1),'application/json');return;
+    case 'reset':$('resetAll').checked=false;$('reset').showModal();return;
+    case 'resetyes':{
+      const old=S,f=freshSession();
+      if(!$('resetAll').checked){f.setup=old.setup;f.cleanup=old.cleanup;f.r1=old.r1;f.locked=old.locked;f.override=old.override;}
+      C.sessions[LAB.id]=f;bind();$('reset').close();toast('Session reset.');lastKey=null;break;
+    }
+    default:return;
+  }
+  after();
+});
+function readFile(input,cb){
+  const f=input.files&&input.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{input.value='';cb(String(r.result));};r.onerror=()=>toast('That file could not be read.');r.readAsText(f);
+}
+document.addEventListener('change',function(ev){
+  const el=ev.target,ch=el.dataset?el.dataset.ch:null;if(!ch)return;
+  const t=el.dataset.t,s=el.dataset.s,i=parseInt(el.dataset.i,10);
+  switch(ch){
+    case 'mode':if(el.value==='clock'){S.timer.mode='clock';toast('Clock Mode. The schedule follows the computer clock.');}else toManual();break;
+    case 'lab':switchLab(el.value);break;
+    case 'theme':C.theme=el.value==='warm'?'warm':'cool';break;
+    case 'cdone':S.cleanupDone[t]=el.checked;break;
+    case 'tag':{const a=S.tagged[s]||(S.tagged[s]=[]);a[i]=el.checked;break;}
+    case 'task':{const a=S.taskDone[t]||(S.taskDone[t]=[]);a[i]=el.checked;break;}
+    case 'list':{
+      stById(s).list=el.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).slice(0,PER_DEFAULT);save();
+      /* If a click caused this blur, wait for that click to land before repainting so it is not lost. */
+      if(pointerDown)document.addEventListener('pointerup',()=>setTimeout(()=>{refresh();tick();},80),{once:true});
+      else{refresh();tick();}
+      return;
+    }
+    case 'labdate':C.labs[i].date=el.value||'';save();setText($('brand'),'Human Anatomy Lab · '+CLASS.label+' · '+LAB.name+(LAB.date?' · '+fmtDate(LAB.date):''));return;
+    case 'csv':
+      readFile(el,text=>{
+        const out=importLabs(text,CLASS.col);
+        const warn=out.warnings.length?'<p><strong>Check these rows:</strong></p><ul>'+out.warnings.slice(0,30).map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul>':'';
+        if(out.errors.length){setupMsg='<div class="msg bad"><p><strong>The file was not loaded.</strong></p><ul>'+out.errors.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>'+warn+'</div>';}
+        else{
+          C.labs=out.labs;C.sessions={};
+          const m=C.labs.find(l=>l.date===todayISO());C.active=(m||C.labs[0]).id;
+          bind();lastKey=null;openSt.clear();
+          setupMsg='<div class="msg'+(out.warnings.length?' bad':'')+'"><p>Loaded '+out.labs.length+' lab'+(out.labs.length>1?'s':'')+' with '+out.labs.reduce((a,l)=>a+l.stations.length,0)+' stations.</p>'+warn+'</div>';
+        }
+        after();
+      });
+      return;
+    case 'restore':
+      readFile(el,text=>{
+        let r=null;try{r=JSON.parse(text);}catch(e){}
+        if(!goodConfig(r)){setupMsg='<div class="msg bad"><p>That is not a backup file from this tool. Nothing was changed.</p></div>';}
+        else{C=Object.assign(freshConfig(),r);bind();lastKey=null;openSt.clear();setupMsg='<div class="msg"><p>Backup loaded.</p></div>';}
+        after();
+      });
+      return;
+    case 'edit':{const e=el.dataset.e,k=el.dataset.k;E[e][k]=e==='r1'?el.value:parseInt(el.value,10);editCheck();return;}
+    case 'eover':editCheck();return;
+    default:return;
+  }
+  after();
+});
+$('stations').addEventListener('toggle',function(ev){
+  const d=ev.target;if(!d.dataset||!d.dataset.s)return;
+  if(d.open)openSt.add(d.dataset.s);else openSt.delete(d.dataset.s);
+},true);
+document.addEventListener('fullscreenchange',()=>{setText($('tFull'),document.fullscreenElement?'Exit full screen':'Full screen');});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){wake();tick();}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&panelOpen()&&!document.querySelector('dialog[open]')){$('panel').hidden=true;$('tPanel').setAttribute('aria-expanded','false');$('tPanel').focus();}});
+
+save();wake();tick();setInterval(tick,250);
+})();
+</script>
+<script>
+(function(){
+  var ID='anatomy-lab-timer-TR-PM';
+  function send(){try{if(window.parent&&window.parent!==window)window.parent.postMessage({id:ID,type:'iframe-height',height:document.documentElement.scrollHeight},'*');}catch(e){}}
+  window.addEventListener('load',send);window.addEventListener('resize',send);
+  if('ResizeObserver' in window)new ResizeObserver(send).observe(document.body);
+})();
+</script>
+</body>
+</html>
